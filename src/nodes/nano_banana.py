@@ -39,7 +39,10 @@ class NanoBananaNode:
                 "system_instruction": ("STRING", {
                     "multiline": True,
                 }),
-                "images": ("IMAGE",),
+                "image_1": ("IMAGE",),
+                "image_2": ("IMAGE",),
+                "image_3": ("IMAGE",),
+                "image_4": ("IMAGE",),
             }
         }
 
@@ -48,7 +51,7 @@ class NanoBananaNode:
 
     CATEGORY = "Even"
 
-    async def generate(self, model, prompt, temperature, system_instruction=None, images=None, audio=None, video=None, files=None):
+    async def generate(self, model, prompt, temperature, system_instruction=None, image_1=None, image_2=None, image_3=None, image_4=None, audio=None, video=None, files=None):
         if self.client is None:
             self.client = create_gemini_client()
 
@@ -59,8 +62,9 @@ class NanoBananaNode:
 
         contents = [prompt]
         imgs = []
-        if images is not None:
-            imgs = tensor_to_pil(images)
+        for img in [image_1, image_2, image_3, image_4]:
+            if img is not None:
+                imgs.append(tensor_to_pil(img))
         for pil_img in imgs:
             img_byte_arr = io.BytesIO()
             pil_img.save(img_byte_arr, format='PNG')
