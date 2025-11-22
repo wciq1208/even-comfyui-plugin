@@ -51,7 +51,7 @@ class NanoBananaNode:
 
     CATEGORY = "Even"
 
-    async def generate(self, model, prompt, temperature, system_instruction=None, image_1=None, image_2=None, image_3=None, image_4=None, audio=None, video=None, files=None):
+    async def generate(self, model, prompt, temperature, system_instruction=None, image_1=None, image_2=None, image_3=None, image_4=None):
         if self.client is None:
             self.client = create_gemini_client()
 
@@ -64,7 +64,7 @@ class NanoBananaNode:
         imgs = []
         for img in [image_1, image_2, image_3, image_4]:
             if img is not None:
-                imgs.append(tensor_to_pil(img))
+                imgs.extend(tensor_to_pil(img))
         for pil_img in imgs:
             img_byte_arr = io.BytesIO()
             pil_img.save(img_byte_arr, format='PNG')
@@ -100,4 +100,8 @@ IMPL_NODE_DISPLAY_NAME_MAPPINGS = {
 
 if __name__ == "__main__":
     import asyncio
-    asyncio.run(NanoBananaNode().generate(api_key=os.environ.get("GEMINI_API_KEY"), model="gemini-3-pro-image-preview", prompt="生成一张沙滩的图片", temperature=0.5))
+    import io
+
+    img = Image.open("ring.png")
+    tensor = pil_to_tensor([img])
+    asyncio.run(NanoBananaNode().generate(model="gemini-3-pro-image-preview", prompt="生成一个穿戴这个戒指的手", temperature=0.5, image_1=tensor))

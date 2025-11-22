@@ -18,15 +18,16 @@ def tensor_to_pil(tensor: torch.Tensor) -> List[Image.Image]:
     images = []
     for i in range(bsz):
         if img_cpu[i].max() <= 1.:
-            img_cpu[i] = (img_cpu[i] * 255).astype(np.uint8)
+            img_cpu_array = (img_cpu[i] * 255).astype(np.uint8)
         else:
-            img_cpu[i] = (img_cpu[i]).astype(np.uint8)
-        images.append(Image.fromarray(img_cpu[i]))
+            img_cpu_array = (img_cpu[i]).astype(np.uint8)
+        images.append(Image.fromarray(img_cpu_array))
     return images
 
 def pil_to_tensor(images: List[Image.Image]) -> torch.Tensor:
     tensors = []
     for img in images:
+        
         np_img = np.array(img)
         if np_img.ndim == 2:  # grayscale to (H, W)
             np_img = np_img[:, :, None]
