@@ -5,9 +5,12 @@ import os
 from google.genai import types
 from google.genai.types import Part
 
-from ..core.gemini_client import *
-from ..core.utils import tensor_to_pil
-
+try:
+    from ..core.gemini_client import *
+    from ..core.utils import tensor_to_pil
+except ImportError:
+    from core.gemini_client import *
+    from core.utils import tensor_to_pil
 
 class GeminiNode:
     def __init__(self):
@@ -45,11 +48,11 @@ class GeminiNode:
         }
 
     RETURN_TYPES = ("STRING",)
-    FUNCTION = "generate_text"
+    FUNCTION = "generate"
 
     CATEGORY = "Even"
 
-    async def generate_text(self, api_key, model, prompt, temperature, system_instruction=None, images=None, audio=None, video=None, files=None):
+    async def generate(self, api_key, model, prompt, temperature, system_instruction=None, images=None, audio=None, video=None, files=None):
         if self.client is None:
             self.client = create_gemini_client(api_key)
 
@@ -59,18 +62,19 @@ class GeminiNode:
         ) if system_instruction else None
 
         contents = [prompt]
-        imgs = tensor_to_pil(images)
+        imgs = []
+        if images is not None:
+            imgs = tensor_to_pil(images)
         for pil_img in imgs:
             img_byte_arr = io.BytesIO()
             pil_img.save(img_byte_arr, format='PNG')
             img_bytes = img_byte_arr.getvalue()
             contents.append(Part.from_bytes(data=img_bytes, mime_type="image/png"))
 
-        response = await asyncio.to_thread(
-            self.client.models.generate_content,
+        response = await self.client.models.generate_content(
             model=model,
             contents=contents,
-            config=config,
+            config=config
         )
         return (response.text,)
 
@@ -83,3 +87,7 @@ IMPL_NODE_CLASS_MAPPINGS = {
 IMPL_NODE_DISPLAY_NAME_MAPPINGS = {
     "Gemini": "Gemini"
 }
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(GeminiNode().generate_text(api_key=os.environ.get("GEMINI_API_KEY"), model="gemini-3-pro-preview", prompt="Hello, world!", temperature=0.5))
