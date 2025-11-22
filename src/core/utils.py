@@ -28,19 +28,21 @@ def pil_to_tensor(images: List[Image.Image]) -> torch.Tensor:
     tensors = []
     for img in images:
         np_img = np.array(img)
-        if np_img.ndim == 2:  # grayscale to (H, W, 1)
+        if np_img.ndim == 2:  # grayscale to (H, W)
             np_img = np_img[:, :, None]
-        np_img = np_img.astype(np.float32) / 255.0  # normalize if desired
-        tensor = torch.from_numpy(np_img)
-        if tensor.shape[-1] == 1:
-            tensor = tensor.expand(*tensor.shape[:-1], 4)  # grayscale to 4 channels if wanted
-        elif tensor.shape[-1] == 3:
-            # pad to RGBA if image has no alpha
-            alpha = torch.ones((*tensor.shape[:-1], 1), dtype=tensor.dtype)
-            tensor = torch.cat([tensor, alpha], dim=-1)
-        tensor = tensor.permute(2, 0, 1)  # HWC to CHW
-        tensors.append(tensor)
-    return torch.stack(tensors)
+        np_img = np_img.astype(np.float32) / 255.0
+        # Ensure 3 channels (RGB)
+        if np_img.shape[2] == 1:  # grayscale, replicate to RGB
+            np_img = np.repeat(np_img, 3, axis=2)
+        elif np_img.shape[2] == 4:  # RGBA, drop alpha
+            np_img = np_img[:, :, :3]
+        elif np_img.shape[2] == 3:
+            pass  # already RGB
+        else:
+            raise ValueError(f"Unsupported number of channels: {np_img.shape[2]}")
+        tensors.append(torch.from_numpy(np_img))
+    batch = torch.stack(tensors, dim=0)  # (B, H, W, C)
+    return batch
 
 def pil_to_base64(pil_image: Image.Image) -> str:
     buffered = io.BytesIO()

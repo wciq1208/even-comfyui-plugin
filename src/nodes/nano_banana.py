@@ -3,10 +3,16 @@ import io
 import os
 
 from google.genai import types
+from google.genai.types import Image as GenaiImage
 from google.genai.types import Part
+from PIL import Image
 
-from ..core.gemini_client import *
-from ..core.utils import pil_to_tensor, tensor_to_pil
+try:
+    from ..core.gemini_client import *
+    from ..core.utils import pil_to_tensor, tensor_to_pil
+except ImportError:
+    from core.gemini_client import *
+    from core.utils import pil_to_tensor, tensor_to_pil
 
 
 class NanoBananaNode:
@@ -42,11 +48,11 @@ class NanoBananaNode:
         }
 
     RETURN_TYPES = ("STRING", "IMAGE")
-    FUNCTION = "generate_text"
+    FUNCTION = "generate"
 
     CATEGORY = "Even"
 
-    async def generate_text(self, api_key, model, prompt, temperature, system_instruction=None, images=None, audio=None, video=None, files=None):
+    async def generate(self, api_key, model, prompt, temperature, system_instruction=None, images=None, audio=None, video=None, files=None):
         if self.client is None:
             self.client = create_gemini_client(api_key)
 
@@ -56,24 +62,29 @@ class NanoBananaNode:
         ) if system_instruction else None
 
         contents = [prompt]
-        imgs = tensor_to_pil(images)
+        imgs = []
+        if images is not None:
+            imgs = tensor_to_pil(images)
         for pil_img in imgs:
             img_byte_arr = io.BytesIO()
             pil_img.save(img_byte_arr, format='PNG')
             img_bytes = img_byte_arr.getvalue()
             contents.append(Part.from_bytes(data=img_bytes, mime_type="image/png"))
 
-        response = await asyncio.to_thread(
-            self.client.models.generate_content,
+        response = await self.client.models.generate_content(
             model=model,
             contents=contents,
             config=config,
         )
-        text = response.text
+        text = ""
         output_image = []
-        for part in response.parts[0]:
-            if part.inline_data is not None:
-                image = part.as_image()
+        for part in response.parts:
+            if part.text is not None:
+                text += part.text
+            elif part.inline_data is not None:
+                genai_image: GenaiImage = part.as_image()
+                image_bytes = genai_image.image_bytes
+                image = Image.open(io.BytesIO(image_bytes))
                 output_image.append(image)
         return (text, pil_to_tensor(output_image))
 
@@ -86,3 +97,7 @@ IMPL_NODE_CLASS_MAPPINGS = {
 IMPL_NODE_DISPLAY_NAME_MAPPINGS = {
     "NanoBanana": "NanoBanana"
 }
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(NanoBananaNode().generate(api_key=os.environ.get("GEMINI_API_KEY"), model="gemini-3-pro-image-preview", prompt="生成一张沙滩的图片", temperature=0.5))
