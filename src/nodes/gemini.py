@@ -20,10 +20,6 @@ class GeminiNode:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "api_key": ("STRING", {
-                    "multiline": False,
-                    "default": os.environ.get("GEMINI_API_KEY")
-                }),
                 "model": (GEMINI_MODELS,),
                 "prompt": ("STRING", {
                     "multiline": True,
@@ -90,4 +86,4 @@ IMPL_NODE_DISPLAY_NAME_MAPPINGS = {
 
 if __name__ == "__main__":
     import asyncio
-    asyncio.run(GeminiNode().generate_text(api_key=os.environ.get("GEMINI_API_KEY"), model="gemini-3-pro-preview", prompt="Hello, world!", temperature=0.5))
+    asyncio.run(GeminiNode().generate(model="gemini-3-pro-preview", prompt="Hello, world!", temperature=0.5))
