@@ -23,10 +23,6 @@ class NanoBananaNode:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "api_key": ("STRING", {
-                    "multiline": False,
-                    "default": os.environ.get("GEMINI_API_KEY")
-                }),
                 "model": (NANO_BANANA_MODELS,),
                 "prompt": ("STRING", {
                     "multiline": True,
@@ -52,9 +48,9 @@ class NanoBananaNode:
 
     CATEGORY = "Even"
 
-    async def generate(self, api_key, model, prompt, temperature, system_instruction=None, images=None, audio=None, video=None, files=None):
+    async def generate(self, model, prompt, temperature, system_instruction=None, images=None, audio=None, video=None, files=None):
         if self.client is None:
-            self.client = create_gemini_client(api_key)
+            self.client = create_gemini_client()
 
         config = types.GenerateContentConfig(
             system_instruction=system_instruction,

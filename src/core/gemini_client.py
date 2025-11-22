@@ -1,9 +1,8 @@
 from google import genai
 
 
-def create_gemini_client(api_key: str):
+def create_gemini_client():
     client = genai.Client(
-        api_key=api_key,
         vertexai=True).aio
     return client
 

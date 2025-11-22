@@ -52,9 +52,9 @@ class GeminiNode:
 
     CATEGORY = "Even"
 
-    async def generate(self, api_key, model, prompt, temperature, system_instruction=None, images=None, audio=None, video=None, files=None):
+    async def generate(self, model, prompt, temperature, system_instruction=None, images=None, audio=None, video=None, files=None):
         if self.client is None:
-            self.client = create_gemini_client(api_key)
+            self.client = create_gemini_client()
 
         config = types.GenerateContentConfig(
             system_instruction=system_instruction,
