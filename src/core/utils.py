@@ -24,6 +24,23 @@ def tensor_to_pil(tensor: torch.Tensor) -> List[Image.Image]:
         images.append(Image.fromarray(img_cpu[i]))
     return images
 
+def pil_to_tensor(images: List[Image.Image]) -> torch.Tensor:
+    tensors = []
+    for img in images:
+        np_img = np.array(img)
+        if np_img.ndim == 2:  # grayscale to (H, W, 1)
+            np_img = np_img[:, :, None]
+        np_img = np_img.astype(np.float32) / 255.0  # normalize if desired
+        tensor = torch.from_numpy(np_img)
+        if tensor.shape[-1] == 1:
+            tensor = tensor.expand(*tensor.shape[:-1], 4)  # grayscale to 4 channels if wanted
+        elif tensor.shape[-1] == 3:
+            # pad to RGBA if image has no alpha
+            alpha = torch.ones((*tensor.shape[:-1], 1), dtype=tensor.dtype)
+            tensor = torch.cat([tensor, alpha], dim=-1)
+        tensor = tensor.permute(2, 0, 1)  # HWC to CHW
+        tensors.append(tensor)
+    return torch.stack(tensors)
 
 def pil_to_base64(pil_image: Image.Image) -> str:
     buffered = io.BytesIO()

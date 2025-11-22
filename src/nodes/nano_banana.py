@@ -6,10 +6,10 @@ from google.genai import types
 from google.genai.types import Part
 
 from ..core.gemini_client import *
-from ..core.utils import tensor_to_pil
+from ..core.utils import pil_to_tensor, tensor_to_pil
 
 
-class GeminiNode:
+class NanoBananaNode:
     def __init__(self):
         self.client = None
 
@@ -21,7 +21,7 @@ class GeminiNode:
                     "multiline": False,
                     "default": os.environ.get("GEMINI_API_KEY")
                 }),
-                "model": (GEMINI_MODELS,),
+                "model": (NANO_BANANA_MODELS,),
                 "prompt": ("STRING", {
                     "multiline": True,
                     "default": "prompt",
@@ -38,13 +38,10 @@ class GeminiNode:
                     "multiline": True,
                 }),
                 "images": ("IMAGE",),
-                "audio": ("AUDIO",),
-                "video": ("VIDEO",),
-                "files": ("FILE",),
             }
         }
 
-    RETURN_TYPES = ("STRING",)
+    RETURN_TYPES = ("STRING", "IMAGE")
     FUNCTION = "generate_text"
 
     CATEGORY = "Even"
@@ -72,14 +69,20 @@ class GeminiNode:
             contents=contents,
             config=config,
         )
-        return (response.text,)
+        text = response.text
+        output_image = []
+        for part in response.parts[0]:
+            if part.inline_data is not None:
+                image = part.as_image()
+                output_image.append(image)
+        return (text, pil_to_tensor(output_image))
 
 # A dictionary that ComfyUI uses to register the nodes in this file
 IMPL_NODE_CLASS_MAPPINGS = {
-    "Gemini": GeminiNode
+    "NanoBanana": NanoBananaNode
 }
 
 # A dictionary that ComfyUI uses to display the node names in the UI
 IMPL_NODE_DISPLAY_NAME_MAPPINGS = {
-    "Gemini": "Gemini"
+    "NanoBanana": "NanoBanana"
 }
